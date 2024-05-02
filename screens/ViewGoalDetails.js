@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { PieChart } from 'react-native-svg-charts';
@@ -5,6 +6,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const ViewGoalDetails = ({ route }) => {
   const { goalData } = route.params;
+  console.log(goalData)
+  goalData.collected=goalData.amount-goalData.remaining
 
   if (!goalData) {
     return (

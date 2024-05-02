@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView,SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView,SafeAreaView, Keyboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons'; // Import Feather icons from react-native-vector-icons
 import FooterList from '../components/footer/FooterList';
+
 const InvestmentPage = () => {
   const [income, setIncome] = useState('');
   const [investmentPercentage, setInvestmentPercentage] = useState('');
@@ -10,10 +12,28 @@ const InvestmentPage = () => {
   const [selectedStock, setSelectedStock] = useState(null);
   const [stockDetails, setStockDetails] = useState(null);
   const [investmentAmount, setInvestmentAmount] = useState(0); // New state variable
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
-  // Fetch the suggested stocks from an API
   useEffect(() => {
     fetchSuggestedStocks();
+
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
   }, []);
 
   const fetchSuggestedStocks = () => {
@@ -89,79 +109,78 @@ const InvestmentPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.containerr}>
-      <LinearGradient
-        colors={['#C9F0DB', '#A0E6C3']}
-        style={styles.background}
-        start={[0, 0]}
-        end={[1, 1]}
-      />
-
-      <Text style={styles.header}>Investment</Text>
-
-      <View style={styles.formContainer}>
-        <Text style={styles.label}>Monthly Income:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Monthly Income"
-          value={income}
-          onChangeText={text => setIncome(text)}
-          keyboardType="numeric"
+        <LinearGradient
+          colors={['#C9F0DB', '#A0E6C3']}
+          style={styles.background}
+          start={[0, 0]}
+          end={[1, 1]}
         />
 
-        <Text style={styles.label}>Investment Percentage:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Investment Percentage"
-          value={investmentPercentage}
-          onChangeText={text => setInvestmentPercentage(text)}
-          keyboardType="numeric"
-        />
+        <Text style={styles.header}>Investment</Text>
 
-        <TouchableOpacity style={styles.calculateButton} onPress={handleInvestment}>
-          <Text style={styles.calculateButtonText}>Calculate</Text>
-        </TouchableOpacity>
+        <View style={styles.formContainer}>
+          <Text style={styles.label}>Monthly Income:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Monthly Income"
+            value={income}
+            onChangeText={text => setIncome(text)}
+            keyboardType="numeric"
+          />
 
-        <Text style={styles.label}>Investment Amount:</Text>
-        <Text style={styles.investmentAmount}>${investmentAmount}</Text>
+          <Text style={styles.label}>Investment Percentage:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Investment Percentage"
+            value={investmentPercentage}
+            onChangeText={text => setInvestmentPercentage(text)}
+            keyboardType="numeric"
+          />
+
+          <TouchableOpacity style={styles.calculateButton} onPress={handleInvestment}>
+            <Text style={styles.calculateButtonText}>Calculate</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.label}>Investment Amount:</Text>
+          <Text style={styles.investmentAmount}>${investmentAmount}</Text>
+        </View>
+
+        {selectedStock && (
+          <View style={styles.stockContainer}>
+            <Text style={styles.stockTitle}>Suggested Stocks:</Text>
+            <ScrollView>
+              {suggestedStocks.map(stock => (
+                <TouchableOpacity
+                  key={stock.symbol}
+                  style={styles.stockItem}
+                  onPress={() => handleStockSelection(stock)}
+                >
+                  <Text style={styles.stockName}>{stock.name}</Text>
+                  <Text style={styles.stockPrice}>Price: ${stock.price}</Text>
+                  <Feather name="chevron-right" size={20} color="#666666" style={styles.stockIcon} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {stockDetails && (
+          <View style={styles.stockDetailsContainer}>
+            <Text style={styles.stockDetailsTitle}>{stockDetails.name} ({stockDetails.symbol})</Text>
+            <Text style={styles.stockDetailsPrice}>Price: ${stockDetails.price}</Text>
+
+            {/* Render the stock graph using a chart library */}
+            {/* <StockGraph data={stockDetails.graphData} /> */}
+
+            {/* You can display more details about the stock here */}
+          </View>
+        )}
       </View>
-
-      {selectedStock && (
-        <View style={styles.stockContainer}>
-          <Text style={styles.stockTitle}>Suggested Stocks:</Text>
-          <ScrollView>
-            {suggestedStocks.map(stock => (
-              <TouchableOpacity
-                key={stock.symbol}
-                style={styles.stockItem}
-                onPress={() => handleStockSelection(stock)}
-              >
-                <Text style={styles.stockName}>{stock.name}</Text>
-                <Text style={styles.stockPrice}>Price: ${stock.price}</Text>
-                <Feather name="chevron-right" size={20} color="#666666" style={styles.stockIcon} />
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-        
-      )}
-
-      {stockDetails && (
-        <View style={styles.stockDetailsContainer}>
-          <Text style={styles.stockDetailsTitle}>{stockDetails.name} ({stockDetails.symbol})</Text>
-          <Text style={styles.stockDetailsPrice}>Price: ${stockDetails.price}</Text>
-
-          {/* Render the stock graph using a chart library */}
-          <StockGraph data={stockDetails.graphData} />
-
-          {/* You can display more details about the stock here */}
-        </View>
-      )}
-     
-    </View>
-    <FooterList />
-   </SafeAreaView>
+      {!keyboardVisible && <FooterList />}
+    </SafeAreaView>
   );
 };
+
 const styles = StyleSheet.create({
   container:{flex: 1, justifyContent: "space-between"},
     stockIcon: {

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, SafeAreaView, ScrollView,KeyboardAvoidingView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, SafeAreaView, KeyboardAvoidingView,Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import FooterList from "../components/footer/FooterList";
 import axios from 'axios';
@@ -16,6 +17,23 @@ const SavingsPage = () => {
     getSavings();
   }, []);
 
+  const updateGoalsDB = async (newGoals) => {
+    console.log("updateGoalsDB ->")
+    console.log(newGoals)
+    try {
+        const response = await axios.put(`${HOST}/api/updateGoals`, {
+            newGoals: newGoals
+        });
+        // Handle response or perform any additional actions upon success
+        console.log('Goals updated successfully:'  );
+    } catch (error) {
+        // Handle error
+        console.error('Error updating goals:', error);
+        // You can choose to throw the error again to propagate it or handle it as needed
+        throw error;
+    }
+}
+ 
   const getSavings = async () => {
     try {
       const resp = await axios.get(`${HOST}/api/getSavings`);
@@ -26,6 +44,28 @@ const SavingsPage = () => {
       throw error;
     }
   };
+
+  const updateSavingAmount = async (savingsAmount ) => {
+    try {
+      console.log("start update Saving on DB - Amount: "+savingsAmount )
+      try {
+        const response = await axios.put(`${HOST}/api/updateSavings`, {
+          savings: savingsAmount
+        });
+        console.log(response)
+        return true;
+      } catch (error) {
+        // Handle error
+        Alert.alert('Error', 'Failed to update investment amount. Please try again.');
+        console.error('Update failed:', error);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating investment amount:", error);
+      return false;
+    }
+  };
+
 
   const getGoals = async () => {
     try {
@@ -51,37 +91,50 @@ const SavingsPage = () => {
   const transferFunds = () => {
     // Find the selected goal
     const selectedGoalItem = goals.find(goal => goal.id === selectedGoal);
-  
+    
     // Validate transfer amount
     if (!selectedGoalItem.transferAmount || isNaN(selectedGoalItem.transferAmount)) {
       setErrorMessage('Please enter a valid transfer amount.');
       return;
     }
-  
+    
     // Convert transfer amount to number
     const transferAmountNumber = parseFloat(selectedGoalItem.transferAmount);
-  
+    
     // Validate if transfer amount is greater than available savings
     if (transferAmountNumber > savingsAmount) {
       setErrorMessage('Insufficient savings amount for transfer.');
       return;
     }
   
-    // Update the savings amount and goal amount
-    setSavingsAmount(prevAmount => prevAmount - transferAmountNumber);
+    // Calculate new savings amount
+    const newSavingsAmount = savingsAmount - transferAmountNumber;
   
+    // Update the savings amount and goal amount
+    setSavingsAmount(newSavingsAmount);
+  
+    // Update goals in the database and saving amount
     setGoals(prevGoals => {
-      return prevGoals.map(goal => {
+      const updatedGoals = prevGoals.map(goal => {
         if (goal.id === selectedGoal) {
           return { ...goal, amount: goal.amount + transferAmountNumber, transferAmount: '' };
         }
         return goal;
       });
-    });
   
-    // Reset error message
-    setErrorMessage('');
+      // Update goals in the database
+      updateGoalsDB(updatedGoals);
+  
+      // Update saving amount
+      updateSavingAmount(newSavingsAmount);
+  
+      // Reset error message
+      setErrorMessage('');
+  
+      return updatedGoals;
+    });
   };
+  
   
 
   const renderGoalItem = ({ item }) => (
@@ -118,39 +171,37 @@ const SavingsPage = () => {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
+        <LinearGradient
+          colors={['#C9F0DB', '#A0E6C3']}
+          style={styles.background}
+          start={[0, 0]}
+          end={[1, 1]}
+        />
         <View style={styles.containerr}>
-          <LinearGradient
-            colors={['#C9F0DB', '#A0E6C3']}
-            style={styles.background}
-            start={[0, 0]}
-            end={[1, 1]}
-          />
-          <ScrollView keyboardShouldPersistTaps="handled">
-            <Text style={styles.header}>Savings Management</Text>
+          <Text style={styles.header}>Savings Management</Text>
 
-            <Text style={styles.savingsAmount}>Savings Amount: ${savingsAmount}</Text>
+          <Text style={styles.savingsAmount}>Savings Amount: ${savingsAmount}</Text>
 
-            <Text style={styles.goalsTitle}>Goals List:</Text>
+          <Text style={styles.goalsTitle}>Goals List:</Text>
 
-            <View style={styles.goalList}>
-              <FlatList
-                data={goals}
-                renderItem={renderGoalItem}
-                keyExtractor={item => item.id}
-              />
-            </View>
+          <View style={styles.goalList}>
+            <FlatList
+              data={goals}
+              renderItem={renderGoalItem}
+              keyExtractor={item => item.id}
+            />
+          </View>
 
-            {errorMessage ? (
-              <Text style={styles.errorMessage}>{errorMessage}</Text>
-            ) : null}
+          {errorMessage ? (
+            <Text style={styles.errorMessage}>{errorMessage}</Text>
+          ) : null}
 
-            <TouchableOpacity
-              style={styles.transferButton}
-              onPress={transferFunds}
-            >
-              <Text style={styles.transferButtonText}>Transfer</Text>
+           
+          <View style={styles.buttonContainerStyle}>
+            <TouchableOpacity onPress={transferFunds} style={styles.buttonStyle}>
+              <Text style={styles.TransferTextButton}>Transfer</Text>
             </TouchableOpacity>
-          </ScrollView>
+          </View>
         </View>
       </KeyboardAvoidingView>
       <FooterList />
@@ -239,6 +290,26 @@ const styles = StyleSheet.create({
   errorMessage: {
     color: 'red',
     marginBottom: 10,
+  },
+  buttonContainerStyle: {
+    alignItems: 'center',
+  },
+  buttonStyle: {
+    marginBottom: 15,
+    backgroundColor: "#E4F2F0",
+    height: 50,
+    width: 300,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 10,
+
+  },
+  TransferTextButton: {
+    fontSize: 20,
+    textAlign: 'center',
+    color: 'black',
+    fontWeight: 'bold',
   },
 });
 

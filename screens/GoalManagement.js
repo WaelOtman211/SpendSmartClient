@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, SafeAreaView } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, SafeAreaView, Keyboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import FooterList from "../components/footer/FooterList";
 import axios from 'axios';
@@ -9,6 +10,27 @@ const GoalManagementPage = () => {
   const [goals, setGoals] = useState([]);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [transferAmount, setTransferAmount] = useState('');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   useEffect(() => {
     getGoals();
@@ -18,48 +40,103 @@ const GoalManagementPage = () => {
     try {
       const resp = await axios.get(`${HOST}/api/getGoals`);
       const dbGoals = resp.data.goals;
-
-      const convertedGoals = dbGoals.map((dbGoal, index) => {
-        return {
-          id: (index + 1).toString(),
-          title: dbGoal.name, // Assuming 'name' field from the database is equivalent to 'title'
-          amount: parseInt(dbGoal.amount),
-          collectedAmount: parseInt(dbGoal.collected),
-          startDate: new Date(dbGoal.startDate).toISOString().split("T")[0],
-          endDate: new Date(dbGoal.endDate).toISOString().split("T")[0],
-        };
-      });
-
-      setGoals(convertedGoals);
+ 
+      setGoals(dbGoals);
     } catch (error) {
       console.error("Error fetching goals data:", error);
       throw error;
     }
   };
+  
+  const updateGoalsDB = async (newGoals) => {
+    console.log("updateGoalsDB ->")
+    console.log(newGoals)
+    try {
+        const response = await axios.put(`${HOST}/api/updateGoals`, {
+            newGoals: newGoals
+        });
+        // Handle response or perform any additional actions upon success
+        console.log('Goals updated successfully:', response.data);
+    } catch (error) {
+        // Handle error
+        console.error('Error updating goals:', error);
+        // You can choose to throw the error again to propagate it or handle it as needed
+        throw error;
+    }
+  }
+
+  const transferProcess = async (fromGoalId, toGoalId) => {
+    // Find fromGoal and toGoal
+    const fromGoal = goals.find(goal => goal._id === fromGoalId);
+    const toGoal = goals.find(goal => goal._id === toGoalId);
+
+    fromGoal.collected = fromGoal.amount - fromGoal.remaining;
+    toGoal.collected = toGoal.amount - toGoal.remaining;
+
+    console.log("transferAmount -->", transferAmount);
+     
+    // Check if the amount to transfer exceeds the collected amount in the fromGoal
+    if (parseFloat(fromGoal.collected) < parseFloat(transferAmount)){
+        alert("Transfer failed: You don't have enough funds in the selected goal to make this transfer.");
+        return;
+    }
+
+    // Update the goals' collected and remaining amounts after the transfer
+    fromGoal.collected = parseFloat(fromGoal.collected) - parseFloat(transferAmount);
+    fromGoal.remaining = parseFloat(fromGoal.remaining) + parseFloat(transferAmount);
+
+    toGoal.collected = parseFloat(toGoal.collected) + parseFloat(transferAmount);
+    toGoal.remaining = parseFloat(toGoal.remaining) - parseFloat(transferAmount);
+    
+    await updateGoalsDB(goals)
+  }
 
   const transferFunds = (fromGoalId, toGoalId) => {
     // Validate transfer amount
+    const fromGoal = goals.find(goal => goal._id === fromGoalId);
+    const toGoal = goals.find(goal => goal._id === toGoalId);
     if (!transferAmount) {
-      // Show error message or perform necessary action
+      Alert.alert(
+        'Empty Transfer Amount',
+        'Please enter a transfer amount before proceeding.',
+        [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+      );
       return;
     }
-
+  
     // Convert transfer amount to number
     const transferAmountNumber = parseFloat(transferAmount);
-
-    // Perform fund transfer logic between goals
-    // Update the goals state with the new amounts
-
-    // Reset transfer amount input field
-    setTransferAmount('');
+  
+    // Ask user for confirmation
+    Alert.alert(
+      'Confirm Transfer',
+      `Are you sure you want to transfer $${transferAmountNumber} from goal ${fromGoal.name} to goal ${toGoal.name}?`,
+      [
+        {
+          text: 'Cancel',
+          onPress: () => {
+            // User cancelled, reset transfer amount input field
+            setTransferAmount('');
+          },
+          style: 'cancel'
+        },
+        {
+          text: 'Transfer',
+          onPress: () => {
+            transferProcess(fromGoalId, toGoalId)
+            setTransferAmount('');
+          }
+        }
+      ]
+    );
   };
 
   const renderGoalItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.goalItem, selectedGoal === item.id && styles.selectedGoalItem]}
-      onPress={() => setSelectedGoal(item.id)}
+      style={[styles.goalItem, selectedGoal === item._id && styles.selectedGoalItem]}
+      onPress={() => setSelectedGoal(item._id)}
     >
-      <Text style={styles.goalTitle}>{item.title}</Text>
+      <Text style={styles.goalTitle}>{item.name}</Text>
       <Text style={styles.goalAmount}>Goal Amount: ${item.amount}</Text>
     </TouchableOpacity>
   );
@@ -69,16 +146,17 @@ const GoalManagementPage = () => {
       return null;
     }
 
-    const goal = goals.find(goal => goal.id === selectedGoal);
+    const goal = goals.find(goal => goal._id === selectedGoal);
 
     return (
       <View style={styles.goalDetails}>
-        <Text style={styles.detailsTitle}>{goal.title}</Text>
+        <Text style={styles.detailsTitle}>{goal.name}</Text>
         <Text style={styles.detailsSubtitle}>Goal Details:</Text>
-        <Text style={styles.detailsText}>Collected Amount: ${goal.collectedAmount}</Text>
-        <Text style={styles.detailsText}>Amount Left: ${goal.amount - goal.collectedAmount}</Text>
-        <Text style={styles.detailsText}>Start Date: {goal.startDate}</Text>
-        <Text style={styles.detailsText}>End Date: {goal.endDate}</Text>
+        <Text style={styles.detailsText}>Amount: ${goal.amount}</Text>
+        <Text style={styles.detailsText}>Collected : ${goal.amount - goal.remaining}</Text>
+        <Text style={styles.detailsText}>Remaining : ${goal.remaining}</Text>
+        <Text style={styles.detailsText}>Start Date: {new Date(goal.startDate).toISOString().split("T")[0]}</Text>
+        <Text style={styles.detailsText}>End Date: {new Date(goal.endDate).toISOString().split("T")[0]}</Text>
 
         <Text style={styles.transferText}>Transfer Funds:</Text>
         <TextInput
@@ -91,16 +169,19 @@ const GoalManagementPage = () => {
         />
 
         <View style={styles.transferContainer}>
-          {goals.map(goal => (
-            <TouchableOpacity
-              key={goal.id}
-              style={styles.transferButton}
-              onPress={() => transferFunds(selectedGoal, goal.id)}
-            >
-              <Text style={styles.transferButtonText}>{goal.title}</Text>
-            </TouchableOpacity>
-          ))}
+          {goals
+            .filter(goal => goal._id !== selectedGoal) // Filter out the selected goal
+            .map(goal => (
+              <TouchableOpacity
+                key={goal._id}
+                style={styles.transferButton}
+                onPress={() => transferFunds(selectedGoal, goal._id)}
+              >
+                <Text style={styles.transferButtonText}>{goal.name}</Text>
+              </TouchableOpacity>
+            ))}
         </View>
+
       </View>
     );
   };
@@ -120,20 +201,19 @@ const GoalManagementPage = () => {
         <FlatList
           data={goals}
           renderItem={renderGoalItem}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item._id}
           contentContainerStyle={styles.goalList}
         />
 
         {renderGoalDetails()}
       </View>
-      <FooterList />
+      {!keyboardVisible && <FooterList />}
     </SafeAreaView>
   );
 };
-const styles = StyleSheet.create({
-    container:{flex: 1, justifyContent: "space-between"},
-    mainText:{fontSize:30 , textAlign:"center"},
 
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: "space-between" },
   containerr: {
     flex: 1,
     paddingHorizontal: 20,

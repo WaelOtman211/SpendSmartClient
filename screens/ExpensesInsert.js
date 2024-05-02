@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, SafeAreaView, Keyboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import FooterList from "../components/footer/FooterList";
 import { FontAwesome } from '@expo/vector-icons';
@@ -7,36 +8,51 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HOST } from '../network';
 
-const ExpensesInsert = ({ navigation }) => {
+const ExpensesInsert = ({ route, navigation }) => {
   const [name, setName] = useState("");
   const [tracked, setTracked] = useState("");
   const [budget, setBudget] = useState("");
   const [yearNumber, setYearNumber] = useState("");
   const [monthNumber, setMonthNumber] = useState("");
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
     const currentDate = new Date();
     const pastMonthDate = new Date(currentDate);
-    pastMonthDate.setMonth(currentDate.getMonth() );
+    pastMonthDate.setMonth(currentDate.getMonth());
 
-    setYearNumber(pastMonthDate.getFullYear().toString());
-    setMonthNumber((pastMonthDate.getMonth() + 1).toString()); // Months are 0-based
-  }, []); // Empty dependency array to ensure it runs only once on component mount
-  const user_id = '64d373c5bf764a582023e5f7';
+    setYearNumber(route.params.yearNumber);
+    setMonthNumber(route.params.monthNumber); // Months are 0-based
 
-  const handleViewExpenses = async () => { 
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => setIsKeyboardVisible(true)
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => setIsKeyboardVisible(false)
+    );
+
+    // Clean up listeners
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, [route.params.yearNumber, route.params.monthNumber]);
+
+  const user_id = '645006320188d6681b4db8f4';
+
+  const handleViewExpenses = async () => {
     try {
-        const resp = await axios.post(`${HOST}/api/getExpenses`, { user_id, yearNumber, monthNumber });
-        
-        // Instead of navigating with parameters, set the expenses data in the state
-        navigation.navigate("ExpensesDetailsPage",{
-          expensesData: resp.data.expenses,
-        });
-    } catch (error) {
-        console.error("Error fetching expenses data:", error);
-    }
-};
+      const resp = await axios.post(`${HOST}/api/getExpenses`, { user_id, yearNumber, monthNumber });
 
+      navigation.navigate("ExpensesDetailsPage", {
+        expensesData: resp.data.expenses,
+      });
+    } catch (error) {
+      console.error("Error fetching expenses data:", error);
+    }
+  };
 
   const handleSubmit = async () => {
     if (name === '' || tracked === '' || budget === '') {
@@ -105,7 +121,7 @@ const ExpensesInsert = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
-      <FooterList />
+      {!isKeyboardVisible && <FooterList />}
     </SafeAreaView>
   );
 };
@@ -126,8 +142,6 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   headerContainer: {
-    
-    
     marginBottom: 30,
   },
   header: {

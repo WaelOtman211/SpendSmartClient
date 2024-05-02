@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList,
@@ -9,21 +10,17 @@ import { HOST } from '../network';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import Items_table  from '../components/Items_table';
+import { useIsFocused } from '@react-navigation/native';
 
 const ExpensesDetails = ({ route, navigation }) => {
     const [yearNumber, setYearNumber] = useState("");
     const [monthNumber, setMonthNumber] = useState("");
     const [expensesData, setExpensesData] = useState(route.params.expensesData || []);
-    const [editingIndex, setEditingIndex] = useState(null);
-    const [updatedBudget, setUpdatedBudget] = useState("");
-    const totalTracked = expensesData.reduce((acc, item) => acc + parseFloat(item.tracked), 0);
-    const totalBudget = expensesData.reduce((acc, item) => acc + parseFloat(item.budget), 0);
+
     const [availableDates, setAvailableDates] = useState([]);
     const [selectedDate, setSelectedDate] = useState(new Date());
-
-    let show_seleceted_date=0
     const [selectedOption, setSelectedOption] = useState(0);
-
     const ComboBox = ({ options, onSelect }) => {
         const [showDropdown, setShowDropdown] = useState(false);
         show_seleceted_date=options[0]
@@ -35,11 +32,11 @@ const ExpensesDetails = ({ route, navigation }) => {
             setSelectedOption(item);
             onSelect(item);
             toggleDropdown();
-  
         };
         
         return (
             <View style={styles.comboBox}>
+                
                 <TouchableOpacity onPress={toggleDropdown} style={styles.comboBoxTouchable}>
                     <Text style={styles.selectedOption}>{selectedOption }</Text>
                     <FontAwesome5 name={showDropdown ? "caret-up" : "caret-down"} size={16} color="black" style={styles.dropdownIcon} />
@@ -63,20 +60,7 @@ const ExpensesDetails = ({ route, navigation }) => {
         );
     };
 
-    const showDatePicker = () => {
-        Alert.alert(
-            "Select Date",
-            "Choose a date to view expenses",
-            availableDates.map(date => ({
-                text: date,
-                onPress: () => handleDateSelect(date)
-            })),
-            {
-                cancelable: true,
-                onDismiss: () => console.log('Dismissed')
-            }
-        );
-    };
+   
 
     const handleDateSelect = async (selectedDate) => {
         const [year, month] = selectedDate.split("-");
@@ -85,7 +69,7 @@ const ExpensesDetails = ({ route, navigation }) => {
         try {
             // Fetch expenses data for the selected date
             const response = await axios.post(`${HOST}/api/getExpenses`, {
-                user_id: '64d373c5bf764a582023e5f7',
+                user_id: '645006320188d6681b4db8f4',
                 yearNumber: year,
                 monthNumber: month
             });
@@ -97,120 +81,34 @@ const ExpensesDetails = ({ route, navigation }) => {
             Alert.alert("Error", "An error occurred while fetching expenses data. Please try again.");
         }
     };
-
-
-    const handleEditBudget = (index) => {
-        setEditingIndex(index);
-        setUpdatedBudget(expensesData[index].budget.toString());
-    };
-
-    const handleContainerPress = () => {
-        if (editingIndex !== null) {
-            setEditingIndex(null);
-        }
-    };
-
-    const handleDeleteExpense = async (expenseId) => {
-        Alert.alert(
-            "Confirm Deletion",
-            "Are you sure you want to delete this expense?",
-            [
-                {
-                    text: "Cancel",
-                    style: "cancel",
-                },
-                {
-                    text: "Delete",
-                    onPress: async () => {
-                        try {
-                            const response = await axios.delete(`${HOST}/api/deleteExpense/${expenseId}`);
-                            if (response.data.message === "Expense deleted successfully") {
-                                Alert.alert("Success", "Expense deleted successfully!");
-                                const updatedExpensesData = expensesData.filter((expense) => expense._id !== expenseId);
-                                setExpensesData(updatedExpensesData);
-                            } else {
-                                Alert.alert("Error", "Failed to delete expense. Please try again.");
-                            }
-                        } catch (error) {
-                            console.error("Error deleting expense:", error);
-                            Alert.alert("Error", "An error occurred. Please try again.");
-                        }
-                    },
-                },
-            ]
-        );
-    };
-
-    const handleSaveBudget = async (index, item) => {
-        console.log("itemId=", item._id);
-        try {
-            const response = await axios.put(
-                `${HOST}/api/updateBudget/${item._id}`,
-                {
-                    newBudget: updatedBudget,
-                    yearNumber: yearNumber,
-                    monthNumber: monthNumber,
-                }
-            );
-
-            console.log("Update response:", response.data);
-
-            if (response.data.success) {
-                Alert.alert("Success", "Budget updated successfully!");
-                const updatedExpensesData = [...expensesData];
-                updatedExpensesData[index].budget = parseFloat(updatedBudget);
-                setExpensesData(updatedExpensesData);
-            } else {
-                Alert.alert("Error", "Failed to update budget. Please try again.");
-            }
-
-        } catch (error) {
-            console.error("Error updating budget:", error);
-            Alert.alert("Error", "An error occurred. Please try again.");
-        }
-    };
-
-    const renderItem = ({ item, index }) => (
-        <TouchableWithoutFeedback onPress={handleContainerPress}>
-            <View style={styles.row}>
-                {editingIndex === index ? (
-                    <>
-                        <TextInput
-                            style={[styles.cell, styles.editInput]}
-                            value={updatedBudget}
-                            onChangeText={(text) => setUpdatedBudget(text)}
-                            keyboardType="numeric"
-                        />
-                        <TouchableOpacity onPress={() => handleSaveBudget(index, item)}>
-                            <Ionicons name="checkmark" size={24} color="green" />
-                        </TouchableOpacity>
-                    </>
-                ) : (
-                    <>
-                        <TouchableOpacity onPress={() => handleEditBudget(index)}>
-                            <Ionicons name="pencil" size={24} color="blue" />
-                        </TouchableOpacity>
-                        <Text style={styles.cell}>
-                            {item.budget}
-                        </Text>
-                    </>
-                )}
-                <Text style={styles.cell}>{item.tracked}</Text>
-                <Text style={styles.cell}>{item.name}</Text>
-                <TouchableOpacity onPress={() => handleDeleteExpense(item._id)}>
-                    <Feather name="trash-2" size={20} color="blue" />
-                </TouchableOpacity>
-            </View>
-        </TouchableWithoutFeedback>
-    );
-
+    const isFocused = useIsFocused();
     useEffect(() => {
         const currentDate = new Date();
         console.log("hgh",currentDate.getMonth())
         // Fetch available dates from the server
+
+        const fetchExpensesData =async () => {
+            var currentDate = new Date();
+ 
+            console.log("---fetchExpensesData", yearNumber, " ", monthNumber, " ---");
+        
+            const response_get_expenses = await axios.post(`${HOST}/api/getExpenses`, {
+              user_id: '645006320188d6681b4db8f4',
+              yearNumber: currentDate.getFullYear(),
+              monthNumber: currentDate.getMonth()+1+""
+            });
+            setExpensesData(response_get_expenses.data.expenses)|| [];
+         
+            return response_get_expenses.data.expenses;
+        
+          }  
+
+
+
+
         const fetchAvailableDates = async () => {
             try {
-                const userId = '64d373c5bf764a582023e5f7';
+                const userId = '645006320188d6681b4db8f4';
                 const response = await axios.get(`${HOST}/api/getAvailableDates`);
                 const dates = response.data.availableDates || [];
                 setAvailableDates(dates);
@@ -246,14 +144,20 @@ const ExpensesDetails = ({ route, navigation }) => {
         };
 
         fetchAvailableDates();
-    }, []); // Empty dependency array to ensure it runs only once on component mount
+
+        if(isFocused){
+            fetchExpensesData()
+            console.log("i am in ExpensesDetailsPage......................... ^)^")
+          }
+
+    }, [isFocused]); // Empty dependency array to ensure it runs only once on component mount
 
 
 
 
     const handleViewExpensesReport = async () => {
         try {
-            const user_id = '64d373c5bf764a582023e5f7';
+            const user_id = '645006320188d6681b4db8f4';
             const resp = await axios.post(`${HOST}/api/getExpenses`, { user_id, yearNumber, monthNumber });
 
             navigation.navigate("ExpensesCircularGraph", {
@@ -272,40 +176,20 @@ const ExpensesDetails = ({ route, navigation }) => {
                 start={[0, 0]}
                 end={[1, 1]}
             />
-
+      
             <View style={styles.container}>
                 <Text style={styles.header}>Expenses Details</Text>
                 <View style={styles.row}>
                     <Text style={styles.cell}>Select Date:</Text>
                     <ComboBox options={availableDates} onSelect={handleDateSelect} />
                 </View>
-                <View style={[styles.row, styles.headerRow]}>
-                    <Text style={styles.headerCell}>Budget</Text>
-                    <Text style={styles.headerCell}>Tracked</Text>
-                    <Text style={styles.headerCell}>Expenses</Text>
-                </View>
-                <View>
-                    <FlatList
-                        style={{ height: 300 }}
-                        data={expensesData}
-                        keyExtractor={(item) => item._id}
-                        renderItem={renderItem}
+                
+                    <Items_table 
+                    data={expensesData}
+                    yearNumber={yearNumber}
+                    monthNumber={monthNumber}
                     />
-                </View>
-                <View>
-                    <>
-                        <View style={styles.line} />
-                        <View style={styles.totalRow}>
-                            <Text style={[styles.cell, styles.totalCell]}>
-                                {totalBudget.toFixed(2)}
-                            </Text>
-                            <Text style={[styles.cell, styles.totalCell]}>
-                                {totalTracked.toFixed(2)}
-                            </Text>
-                            <Text style={[styles.cell, styles.totalCell]}>Total</Text>
-                        </View>
-                    </>
-                </View>
+              
                 <View style={{ marginBottom: 20 }}></View>
                 <TouchableOpacity
                     onPress={handleViewExpensesReport}
@@ -315,7 +199,10 @@ const ExpensesDetails = ({ route, navigation }) => {
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={() => {
-                        navigation.navigate("ExpensesInsert");
+                        navigation.navigate("ExpensesInsert", {  
+                            yearNumber: yearNumber,
+                            monthNumber:monthNumber
+                          });
                     }}
                     style={styles.iconButton}
                 >
@@ -390,20 +277,8 @@ const styles = StyleSheet.create({
         color: '#333333',
         textAlign: 'center',
     },
-    headerRow: {
-        backgroundColor: 'pink',
-        borderBottomWidth: 2,
-        borderBottomColor: '#CCCCCC',
-        paddingVertical: 8,
-    },
-    headerCell: {
-        flex: 1,
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333333',
-        alignSelf: 'center',
-        textAlign: 'center',
-    },
+     
+    
     row: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -430,18 +305,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 20,
     },
-    totalCell: {
-        fontWeight: 'bold',
-    },
-    datePicker: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#333333',
-        borderRadius: 5,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-    },
+    
     dropdownIcon: {
         marginLeft: 'auto', // Align icon to the right
     },
@@ -475,12 +339,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         elevation: 5,
     },
-    editInput: {
-        borderWidth: 1,
-        borderColor: 'black',
-        borderRadius: 5,
-        padding: 5,
-    },
+   
 
 });
 

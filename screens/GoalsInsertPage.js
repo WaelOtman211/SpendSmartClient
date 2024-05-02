@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, SafeAreaView, FlatList,Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, SafeAreaView, FlatList, Alert, Keyboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
 import FooterList from "../components/footer/FooterList";
@@ -17,7 +18,7 @@ const GoalsInsert = ({ navigation }) => {
   const [amount, setAmount] = useState("");
   const [rate, setRate] = useState("");
   const [description, setDescription] = useState("");
-  const [collected, setCollected] = useState('1500');
+  const [collected, setCollected] = useState('0');
   const [remaining, setRemaining] = useState('0');
   const [achieved, setAchieved] = useState(false);
   const [startDate, setStartDate] = useState('2023-01-01');
@@ -26,10 +27,23 @@ const GoalsInsert = ({ navigation }) => {
   const [isAchievedGoalPressed, setIsAchievedGoalPressed] = useState(false);
   const [isViewGoalPressed, setIsViewGoalPressed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
- 
+  const [keyboardStatus, setKeyboardStatus] = useState(false); // State variable to track keyboard status
 
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardStatus(true);
+    });
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardStatus(false);
+    });
 
- const handleSearch = (text) => {
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const handleSearch = (text) => {
     setSearchQuery(text);
 
     const filtered = goals.filter((goal) =>
@@ -63,7 +77,7 @@ const GoalsInsert = ({ navigation }) => {
           id: dbGoal._id,
           name: dbGoal.name,
           amount: parseInt(dbGoal.amount),
-          collected: parseInt(dbGoal.collected),
+          collected: parseInt(dbGoal.amount-dbGoal.remaining),
           remaining: parseInt(dbGoal.remaining),
           startDate: new Date(dbGoal.startDate).toISOString().split("T")[0],
           endDate: new Date(dbGoal.endDate).toISOString().split("T")[0],
@@ -85,25 +99,7 @@ const GoalsInsert = ({ navigation }) => {
   }, []);
 
   const handleViewGoalDetails = async (item) => {
-     // Display a confirmation dialog
-    Alert.alert(
-      `View Details for ${item.name}`,
-      `Are you sure you want to view details for the goal "${item.name}"?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'OK',
-          onPress: () => {
-            // Navigate to the details screen
-            navigation.navigate('ViewGoalDetails', { goalData: item });
-          },
-        },
-      ],
-      { cancelable: false }
-    );
+    navigation.navigate('ViewGoalDetails', { goalData: item });
   };
 
   const handleViewGoals = () => {
@@ -194,6 +190,7 @@ const GoalsInsert = ({ navigation }) => {
       { cancelable: false }
     );
   };
+  
   const renderGoalItem = ({ item }) => {
     if (isAchievedGoalPressed && !item.achieved) {
       return null; // Skip rendering non-achieved goals in the achieved goals section
@@ -226,8 +223,6 @@ const GoalsInsert = ({ navigation }) => {
       </TouchableOpacity>
     );
   };
- 
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -326,13 +321,14 @@ const GoalsInsert = ({ navigation }) => {
               onChangeText={(text) => setDescription(text)}
             />
             <TouchableOpacity onPress={handleManage} style={styles.buttonStyle}>
-              <Text style={styles.buttonText}>Manage</Text>
+              <Text style={styles.buttonText}>Save</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
 
-      <FooterList />
+      {/* Conditionally render the FooterList based on keyboard status */}
+      {!keyboardStatus && <FooterList />}
     </SafeAreaView>
   );
 };

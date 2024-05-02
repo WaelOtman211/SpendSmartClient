@@ -33,7 +33,7 @@ const CustomHeaderTitle = () => (
 
 const screens = {
   
-    OptionPage,
+  OptionPage,
   InvestmentPage,
   GoalManagement,
   ExpensesDetailsPage,

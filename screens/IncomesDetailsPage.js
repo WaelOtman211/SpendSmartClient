@@ -1,32 +1,165 @@
+
 import React, { useState ,useEffect} from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, SafeAreaView, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList ,Modal} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
  import axios from 'axios';
  import { HOST } from '../network';
  import Ionicons  from 'react-native-vector-icons/Ionicons';
+ import { FontAwesome5 } from '@expo/vector-icons';
+ import Items_table  from '../components/Items_table_income';
+ import { useIsFocused } from '@react-navigation/native';
+
+
+ var selectedYearNumber_v=0
+ var selectedMonthNumber_v=0
 
 const IncomesDetails = ({ route, navigation }) => {
-    const { incomesData } = route.params;
-    const totalTracked = incomesData.incomes.reduce((acc, item) => acc + parseFloat(item.tracked), 0);
-    const totalBudget = incomesData.incomes.reduce((acc, item) => acc + parseFloat(item.amount), 0);
+    const [incomesData, setIncomesData] = useState(route.params.incomesData.incomes || []);
+   
     const [editingIndex, setEditingIndex] = useState(null);
     const [updatedBudget, setUpdatedBudget] = useState("");
-
+    const [availableDates, setAvailableDates] = useState([]);
+    const [selectedOption, setSelectedOption] = useState(0);
+    
     const [yearNumber, setYearNumber] = useState("");
     const [monthNumber, setMonthNumber] = useState("");
-  
+
+
+    const ComboBox = ({ options, onSelect }) => {
+        const [showDropdown, setShowDropdown] = useState(false);
+        show_seleceted_date=options[0]
+        const toggleDropdown = () => {
+            setShowDropdown(!showDropdown);
+        };
+
+        const handleSelect = (item) => {
+            setSelectedOption(item);
+            onSelect(item);
+            toggleDropdown();
+        };
+        
+        return (
+            <View style={styles.comboBox}>
+                
+                <TouchableOpacity onPress={toggleDropdown} style={styles.comboBoxTouchable}>
+                    <Text style={styles.selectedOption}>{selectedOption }</Text>
+                    <FontAwesome5 name={showDropdown ? "caret-up" : "caret-down"} size={16} color="black" style={styles.dropdownIcon} />
+                </TouchableOpacity>
+                <Modal visible={showDropdown} animationType="fade" transparent={true}>
+                    <TouchableOpacity style={styles.modalOverlay} onPress={toggleDropdown}>
+                        <View style={styles.modalContent}>
+                            <FlatList
+                                data={options}
+                                keyExtractor={(item, index) => index.toString()}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity onPress={() => handleSelect(item)} style={styles.option}>
+                                        <Text>{item}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
+            </View>
+        );
+    };
+    const fetchAvailableDates = async () => {
+        try {
+            const userId = '645006320188d6681b4db8f4';
+            const response = await axios.get(`${HOST}/api/getAvailableDates`);
+            const dates = response.data.availableDates || [];
+            setAvailableDates(dates);
+            console.log("Available Dates:", availableDates);
+            dates.sort((a, b) => {
+                const [yearA, monthA] = a.split('-').map(Number);
+                const [yearB, monthB] = b.split('-').map(Number);
+            
+                // Compare years first
+                if (yearA !== yearB) {
+                    return yearB - yearA; // Sort by year in descending order
+                }
+            
+                // If years are equal, compare months
+                return monthB - monthA; // Sort by month in descending order
+            });
+            setSelectedOption(dates[0]);
+
+            // Set default date to the previous month
+            const currentDate = new Date();
+            currentDate.setMonth(currentDate.getMonth() );
+            const defaultDate = `${currentDate.getFullYear()}-${currentDate.getMonth() +1}`;
+            setYearNumber(currentDate.getFullYear().toString());
+            setMonthNumber((currentDate.getMonth() + 1).toString());
+
+            if (!dates.includes(defaultDate)) {
+                // If the default date is not in the list, add it
+                setAvailableDates([...dates, defaultDate]);
+            }
+        } catch (error) {
+            console.error("Error fetching available dates:", error);
+        }
+    };
+    const handleDateSelect = async (selectedDate) => {
+        const [year, month] = selectedDate.split("-");
+        setYearNumber(year);
+        setMonthNumber(month);
+        selectedYearNumber_v=year
+        selectedMonthNumber_v=month
+        try {
+            // Fetch incomes data for the selected date
+            const response = await axios.post(`${HOST}/api/getIncomes`, {
+                user_id: '645006320188d6681b4db8f4',
+                yearNumber: year,
+                monthNumber: month
+            });
+
+            // Update incomes data state with the fetched data
+            setIncomesData(response.data.incomes || []);
+        } catch (error) {
+            console.error("Error fetching incomes data:", error);
+            Alert.alert("Error", "An error occurred while fetching incomes data. Please try again.");
+        }
+        console.log("handleDateSelect year",selectedYearNumber_v," monthNumber ",selectedMonthNumber_v )
+    };
+
+    const fetchIncomesData =async () => {
+        var currentDate = new Date();
+        var currentMonthValue=currentDate.getMonth()+1+""
+       
+        var curentYearValue=currentDate.getFullYear()
+        selectedYearNumber_v=currentMonthValue
+        selectedMonthNumber_v=curentYearValue
+        console.log("---fetchIncomesData", curentYearValue, " ", currentMonthValue, " ---");
+    
+        const response_get_incomes = await axios.post(`${HOST}/api/getIcomes`, {
+          user_id: '645006320188d6681b4db8f4',
+          yearNumber: currentDate.getFullYear(),
+          monthNumber: currentDate.getMonth()+1+""
+        });
+        setIncomesData(response_get_incomes.data.incomes|| []);
+        return response_get_incomes.data.incomes;
+      }  
+
+    const isFocused = useIsFocused();
+
     useEffect(() => {
       const currentDate = new Date();
       const pastMonthDate = new Date(currentDate);
       pastMonthDate.setMonth(currentDate.getMonth() - 1);
   
-      setYearNumber(pastMonthDate.getFullYear().toString());
-      setMonthNumber((pastMonthDate.getMonth() + 1).toString()); // Months are 0-based
-    }, []); // Empty dependency array to ensure it runs only once on component mount
+      setYearNumber(currentDate.getFullYear().toString());
+      setMonthNumber((currentDate.getMonth() + 1).toString()); // Months are 0-based
+
+      fetchAvailableDates();
+      if(isFocused){
+        fetchIncomesData()
+        console.log("i am in IncomesDetailsPage......................... ^_^")
+      }
+    }, [isFocused]); // Empty dependency array to ensure it runs only once on component mount
 
     const handleViewIncomesReport = async () => {
         try {
-            const user_id = '64d373c5bf764a582023e5f7';
+            const user_id = '645006320188d6681b4db8f4';
             const resp = await axios.post(`${HOST}/api/getIncomes`,{ user_id, yearNumber, monthNumber });
             const incomesData = resp.data;
             navigation.navigate("IncomesCircularGraph", {
@@ -55,33 +188,18 @@ const IncomesDetails = ({ route, navigation }) => {
             />
             <View style={styles.container}>
                 <Text style={styles.header}>Incomes Details</Text>
-                <View style={[styles.row, styles.headerRow]}>
-                    <Text style={styles.headerCell}>Budget</Text>
-                    <Text style={styles.headerCell}>Tracked</Text>
-                    <Text style={styles.headerCell}>Incomes</Text>
+
+                <View style={styles.row}>
+                    <Text style={styles.cell}>Select Date:</Text>
+                    <ComboBox options={availableDates} onSelect={handleDateSelect} />
                 </View>
-                <FlatList
-                    data={incomesData.incomes}
-                    keyExtractor={(item) => item._id}
-                    renderItem={renderItem}
-                  
-                />
-                <View>
-                
-                        <>
-                            <View style={styles.line} />
-                            <View style={styles.totalRow}>
-                                <Text style={[styles.cell, styles.totalCell]}>
-                                    {totalBudget.toFixed(2)}
-                                </Text>
-                                <Text style={[styles.cell, styles.totalCell]}>
-                                    {totalTracked.toFixed(2)}
-                                </Text>
-                                <Text style={[styles.cell, styles.totalCell]}>Total</Text>
-                            </View>
-                        </>
-                    
-                </View>
+
+                <Items_table 
+                    data={incomesData}
+                    yearNumber={yearNumber}
+                    monthNumber={monthNumber}
+                    />
+
                 <View style={{ marginBottom: 20 }}></View>
                 <View style={{ marginBottom: 20 }}></View>
                 <TouchableOpacity
@@ -90,9 +208,12 @@ const IncomesDetails = ({ route, navigation }) => {
                 >
                     <Text style={styles.buttonText}>View Incomes Report</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
+                <TouchableOpacity  
                 onPress={() => {
-                    navigation.navigate("IncomesInsert");
+                    navigation.navigate("IncomesInsert", {  
+                            yearNumber: selectedYearNumber_v,
+                            monthNumber:selectedMonthNumber_v
+                          });
                 }}
                 style={styles.iconButton}
             >
@@ -104,6 +225,51 @@ const IncomesDetails = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+    selectedOption: {
+        flex: 1,
+    },
+    dropdownIcon: {
+        marginLeft: 5,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 5,
+        padding: 10,
+        elevation: 5,
+        maxHeight: 200,
+    },
+    option: {
+        paddingVertical: 8,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        borderBottomWidth: 1,
+        borderBottomColor: '#CCCCCC',
+        paddingVertical: 12,
+    },
+    comboBox: {
+        flex: 1,
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        justifyContent: 'center',
+    },
+    comboBoxTouchable: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#333333',
+        borderRadius: 5,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+    },
     safeArea: {
         flex: 1,
         justifyContent: 'center',
