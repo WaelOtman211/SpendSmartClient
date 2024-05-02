@@ -9,7 +9,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const IncomesInsert = ({ route, navigation }) => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
-  const [percentage, setPercentage] = useState("");
   const [tracked, setTracked] = useState("");
   const [yearNumber, setYearNumber] = useState("");
   const [monthNumber, setMonthNumber] = useState("");
@@ -48,7 +47,7 @@ const IncomesInsert = ({ route, navigation }) => {
   };
 
   const handleSubmit = async () => {
-    if (name === '' || amount === '' || percentage === '' || tracked === '' || yearNumber === '' || monthNumber === '') {
+    if (name === '' || amount === ''|| tracked === '' || yearNumber === '' || monthNumber === '') {
       alert("All fields are required");
       return;
     }
@@ -59,7 +58,6 @@ const IncomesInsert = ({ route, navigation }) => {
         name,
         amount,
         tracked,
-        percentage,
         yearNumber,
         monthNumber,
       });
@@ -105,14 +103,7 @@ const IncomesInsert = ({ route, navigation }) => {
             keyboardType="numeric"
             onChangeText={text => setTracked(text)}
           />
-          <Text style={styles.label}>What percentage of your income do you want to use?:</Text>
-          <View style={styles.contentPercentage}>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              onChangeText={text => setPercentage(text)}
-            />
-          </View>
+
           <TouchableOpacity onPress={handleSubmit} style={styles.buttonStyle}>
             <Text style={styles.buttonText}>Submit</Text>
           </TouchableOpacity>
@@ -153,10 +144,7 @@ const styles = StyleSheet.create({
     color: 'black',
     textAlign: 'center',
   },
-  contentPercentage: {
-    width: '100%',
-    maxWidth: 100,
-  },
+  
   content: {
     width: '100%',
     maxWidth: 400,
