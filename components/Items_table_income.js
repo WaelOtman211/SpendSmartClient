@@ -3,12 +3,10 @@ import {
     View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList,
     TextInput, Alert, TouchableWithoutFeedback, Modal
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import { HOST } from '../network';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
+
  
 
 
@@ -201,7 +199,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     headerRow: {
-        backgroundColor: 'pink',
+        backgroundColor: 'green',
         borderBottomWidth: 2,
         borderBottomColor: '#CCCCCC',
         paddingVertical: 8,

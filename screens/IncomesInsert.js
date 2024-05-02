@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, SafeAreaView, StyleSheet, Keyboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import FooterList from "../components/footer/FooterList";
-import { FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
 import { HOST } from '../network';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -39,8 +37,8 @@ const IncomesInsert = ({ route, navigation }) => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
-  }, []);
-
+  }, [route.params.yearNumber, route.params.monthNumber]);
+  const user_id = '645006320188d6681b4db8f4';
   const handleViewIncomes = async () => {
     const resp = await axios.post(`${HOST}/api/getIncomes`, { user_id, yearNumber, monthNumber });
 

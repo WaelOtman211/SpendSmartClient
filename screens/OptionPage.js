@@ -1,4 +1,3 @@
-
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, SafeAreaView, FlatList } from 'react-native'
 import React, { useState, useContext, useEffect } from 'react'
 import FooterList from "../components/footer/FooterList";
@@ -8,12 +7,10 @@ import { HOST } from '../network';
 
 import Modal_Last_month_process  from '../components/Modal_Last_month_process';
 
-var isLastMonthProcessActive_1=false
-
 const OptionPage = ({ navigation }) => {
   const user_id = '645006320188d6681b4db8f4';
 
-  const is_client_update_Last_Month_Process=true 
+  const is_client_update_Last_Month_Process=false 
  
 
   const DayProcess=23

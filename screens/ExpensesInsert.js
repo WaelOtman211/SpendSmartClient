@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, SafeAreaView, Keyboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,7 +16,7 @@ const ExpensesInsert = ({ route, navigation }) => {
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
-    const currentDate = new Date();
+    const currentDate = new Date(); 
     const pastMonthDate = new Date(currentDate);
     pastMonthDate.setMonth(currentDate.getMonth());
 
