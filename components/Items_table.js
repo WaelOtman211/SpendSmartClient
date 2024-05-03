@@ -26,12 +26,12 @@ const Items_table=Props=>{
     {
         var totalTracked = expensesData.reduce((acc, item) => acc + parseFloat(item.tracked), 0);
         var totalBudget = expensesData.reduce((acc, item) => acc + parseFloat(item.budget), 0);
+       
         Props.setTotalExpenses(totalBudget)
     }
     catch (error) 
     {
-        var totalTracked = 0
-        var totalBudget = 0
+        
     }
     
 

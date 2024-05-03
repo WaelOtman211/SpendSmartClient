@@ -163,7 +163,7 @@ const Items_table=Props=>{
                         <View style={styles.line} />
                         <View style={styles.totalRow}>
                             <Text style={[styles.cell, styles.totalCell]}>
-                                {totalAmount .toFixed(2)}
+                                {totalAmount.toFixed(2)}
                             </Text>
                             <Text style={[styles.cell, styles.totalCell]}>
                                 {totalTracked.toFixed(2)}
