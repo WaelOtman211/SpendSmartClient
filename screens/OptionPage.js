@@ -10,7 +10,7 @@ import Modal_Last_month_process  from '../components/Modal_Last_month_process';
 const OptionPage = ({ navigation }) => {
   const user_id = '645006320188d6681b4db8f4';
 
-  const is_client_update_Last_Month_Process=true 
+  const is_client_update_Last_Month_Process=false 
  
 
   const DayProcess=23
@@ -95,7 +95,6 @@ const OptionPage = ({ navigation }) => {
       monthNumber: month
   });
 
-   
     setIncomesData(response.data.incomes || []);
     
     return resp.data.incomes;

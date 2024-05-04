@@ -29,6 +29,8 @@ const Modal_Last_month_process = Props => {
 
   const [investmentAmount, setInvestmentAmount] = useState('');
 
+  const [savingsAmount, setSavingsAmount] = useState("");
+
   const showAlert = () => {
     Alert.alert(
       'Missing fields',
@@ -41,6 +43,17 @@ const Modal_Last_month_process = Props => {
       ],
       { cancelable: false }
     );
+  };
+
+  const getSavings = async () => {
+    try {
+      const resp = await axios.get(`${HOST}/api/getSavings`);
+      const savings = resp.data.savings;
+      setSavingsAmount(savings);
+    } catch (error) {
+      console.error("Error fetching savings data:", error);
+      throw error;
+    }
   };
 
 
@@ -148,11 +161,30 @@ const Modal_Last_month_process = Props => {
   }
   // Function to update the remaining amount
   function updateRemaining(goals, oneRateAmount) {
+
+    var extraMoney=0;
+
     goals.forEach(goal => {
       const rateAmount = oneRateAmount * parseInt(goal.rate);
-      goal.remaining -= rateAmount;
+
+      if(rateAmount <=goal.remaining){
+        goal.remaining -= rateAmount;
+        if (goal.remaining==0){
+            goal.achieved=true;
+        }
+        goal.collected  = goal.amount-goal.remaining;
+      }
+      else
+      {
+        goal.achieved=true;
+        goal.remaining=0;
+        goal.collected=goal.amount;
+        extraMoney+=rateAmount-goal.remaining;
+      }
+
     });
     console.log(goals)
+    console.log("extraMoney- "+extraMoney)
   }
 
   const budgetAlgorithm = async (freeMoney) => {
@@ -167,26 +199,63 @@ const Modal_Last_month_process = Props => {
 
     console.log("oneRateAmount-" + oneRateAmount)
     updateRemaining(userGoals, oneRateAmount);
-    await updateGoalsDB(userGoals)
+    
+    console.log("final saving Amount-" + savingsAmount)
+
+    //await updateGoalsDB(userGoals)
 
 
   }
   ////////////////////////////////////////////////////////  
+
+  const updateSavingAmount = async (savingsAmount ) => {
+    try {
+      console.log("start update Saving on DB - Amount: "+savingsAmount )
+      try {
+        const response = await axios.put(`${HOST}/api/updateSavings`, {
+          savings: savingsAmount
+        });
+        console.log(response)
+        return true;
+      } catch (error) {
+        // Handle error
+        Alert.alert('Error', 'Failed to update investment amount. Please try again.');
+        console.error('Update failed:', error);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating investment amount:", error);
+      return false;
+    }
+  };
+
   const finishStage = async () => {
     //setModalVisible(!modalVisible)
     console.log("finishStage")
+    getSavings()
+    console.log("Saving Amount- " + savingsAmount)
     setFreeMoney(parseInt(totalIncome) - parseInt(totalExpenses) - parseInt(investmentAmount))
     console.log("freeMoney-" + freeMoney)
     if (freeMoney > 0) {
       budgetAlgorithm(freeMoney)
     }
 
-    res = await updateInvestmentAmountDB()
-    console.log(res)
-    if (res === false) {
-      Alert.alert('Error', 'Failed to update investment amount. Please try again.');
-      return
-    }
+
+    //updateSavingAmount
+
+    // res = await updateSavingAmount(savingsAmount)
+    // console.log(res)
+    // if (res === false) {
+    //   Alert.alert('Error', 'Failed to update Savings money. Please try again.');
+    //   return
+    // }
+    
+    // res = await updateInvestmentAmountDB()
+    // console.log(res)
+    // if (res === false) {
+    //   Alert.alert('Error', 'Failed to update investment amount. Please try again.');
+    //   return
+    // }
 
   }
 

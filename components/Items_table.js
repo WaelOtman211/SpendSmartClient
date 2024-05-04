@@ -18,14 +18,14 @@ const Items_table=Props=>{
     
     const [editingIndex, setEditingIndex] = useState(null);
     const [updatedBudget, setUpdatedBudget] = useState("");
-    
-
+    var totalTracked =0
+    var totalBudget=0
     useEffect(() => { setExpensesData(Props.data) }, [Props.data])
     
     try 
     {
-        var totalTracked = expensesData.reduce((acc, item) => acc + parseFloat(item.tracked), 0);
-        var totalBudget = expensesData.reduce((acc, item) => acc + parseFloat(item.budget), 0);
+        totalTracked = expensesData.reduce((acc, item) => acc + parseFloat(item.tracked), 0);
+        totalBudget = expensesData.reduce((acc, item) => acc + parseFloat(item.budget), 0);
        
         Props.setTotalExpenses(totalBudget)
     }

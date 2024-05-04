@@ -21,9 +21,17 @@ const ExpensesDetails = ({ route, navigation }) => {
     const [availableDates, setAvailableDates] = useState([]);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedOption, setSelectedOption] = useState(0);
+
+    const [firstTimeShowFirstDateOnCombo, setFirstTimeShowFirstDateOnCombo] = useState(false);
+    
     const ComboBox = ({ options, onSelect }) => {
+        console.log("options "+ options) 
         const [showDropdown, setShowDropdown] = useState(false);
         show_seleceted_date=options[0]
+ 
+    
+        
+
         const toggleDropdown = () => {
             setShowDropdown(!showDropdown);
         };
@@ -84,7 +92,7 @@ const ExpensesDetails = ({ route, navigation }) => {
     const isFocused = useIsFocused();
     useEffect(() => {
         const currentDate = new Date();
-        console.log("hgh",currentDate.getMonth())
+         
         // Fetch available dates from the server
 
         const fetchExpensesData =async () => {
