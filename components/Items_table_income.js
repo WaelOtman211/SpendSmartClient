@@ -19,17 +19,17 @@ const Items_table=Props=>{
     
 
     useEffect(() => { setIncomesData(Props.data) }, [Props.data])
+    var totalTracked=0
+    var totalAmount=0
     
     try 
     {
-        var totalTracked = incomesData.reduce((acc, item) => acc + parseFloat(item.tracked), 0);
-        var totalAmount  = incomesData.reduce((acc, item) => acc + parseFloat(item.amount), 0);
+        totalTracked = incomesData.reduce((acc, item) => acc + parseFloat(item.tracked), 0);
+        totalAmount  = incomesData.reduce((acc, item) => acc + parseFloat(item.amount), 0);
         Props.setTotalIncome(totalAmount)
     }
     catch (error) 
     {
-        var totalTracked = 0
-        var totalAmount  = 0
     }
     
 
@@ -163,7 +163,7 @@ const Items_table=Props=>{
                         <View style={styles.line} />
                         <View style={styles.totalRow}>
                             <Text style={[styles.cell, styles.totalCell]}>
-                                {totalAmount .toFixed(2)}
+                                {totalAmount.toFixed(2)}
                             </Text>
                             <Text style={[styles.cell, styles.totalCell]}>
                                 {totalTracked.toFixed(2)}

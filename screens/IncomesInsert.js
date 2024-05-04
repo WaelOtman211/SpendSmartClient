@@ -19,6 +19,8 @@ const IncomesInsert = ({ route, navigation }) => {
     setYearNumber(route.params.yearNumber);
     setMonthNumber(route.params.monthNumber);
 
+    console.log("insert income page  year"+route.params.yearNumber + " month"+route.params.monthNumber)
+
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
       () => {
@@ -38,19 +40,28 @@ const IncomesInsert = ({ route, navigation }) => {
     };
   }, [route.params.yearNumber, route.params.monthNumber]);
   const user_id = '645006320188d6681b4db8f4';
+  
   const handleViewIncomes = async () => {
-    const resp = await axios.post(`${HOST}/api/getIncomes`, { user_id, yearNumber, monthNumber });
-
-    navigation.navigate("IncomesDetailsPage", {
-      incomesData: resp.data
-    });
+    try {
+        
+      const resp = await axios.post(`${HOST}/api/getIncomes`, { user_id, yearNumber, monthNumber });
+      
+      navigation.navigate("IncomesDetailsPage", {
+        incomesData: resp.data
+      });
+    } catch (error) {
+      console.error("Error fetching expenses data:", error);
+    }
   };
+  
 
   const handleSubmit = async () => {
     if (name === '' || amount === ''|| tracked === '' || yearNumber === '' || monthNumber === '') {
       alert("All fields are required");
       return;
     }
+    console.log("handleSubmit yearNumber "+ yearNumber)
+    console.log("handleSubmit monthNumber"+monthNumber )
     
     try {
       const resp = await axios.post(`${HOST}/api/insertIncomes`, {

@@ -95,7 +95,6 @@ const OptionPage = ({ navigation }) => {
       monthNumber: month
   });
 
-   
     setIncomesData(response.data.incomes || []);
     
     return resp.data.incomes;

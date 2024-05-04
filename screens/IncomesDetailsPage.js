@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const IncomesDetails = ({ route, navigation }) => {
     const [incomesData, setIncomesData] = useState(route.params.incomesData.incomes || []);
+     
    
     const [editingIndex, setEditingIndex] = useState(null);
     const [updatedBudget, setUpdatedBudget] = useState("");
@@ -23,15 +24,19 @@ const IncomesDetails = ({ route, navigation }) => {
     
     const [yearNumber, setYearNumber] = useState("");
     const [monthNumber, setMonthNumber] = useState("");
-
-
+    const [firstTimeShowFirstDateOnCombo, setFirstTimeShowFirstDateOnCombo] = useState(0);
+    
     const ComboBox = ({ options, onSelect }) => {
         const [showDropdown, setShowDropdown] = useState(false);
         show_seleceted_date=options[0]
         const toggleDropdown = () => {
             setShowDropdown(!showDropdown);
         };
-
+        if(firstTimeShowFirstDateOnCombo==false){
+            setFirstTimeShowFirstDateOnCombo(true)
+            setSelectedOption(show_seleceted_date)
+        }
+    
         const handleSelect = (item) => {
             setSelectedOption(item);
             onSelect(item);
@@ -100,11 +105,14 @@ const IncomesDetails = ({ route, navigation }) => {
         }
     };
     const handleDateSelect = async (selectedDate) => {
-        const [year, month] = selectedDate.split("-");
+        const [year,month ] = selectedDate.split("-");
+
         setYearNumber(year);
         setMonthNumber(month);
+        
         selectedYearNumber_v=year
         selectedMonthNumber_v=month
+        console.log("handleDateSelect -> selectedYearNumber_v "+selectedYearNumber_v+ "  selectedMonthNumber_v "+selectedMonthNumber_v )
         try {
             // Fetch incomes data for the selected date
             const response = await axios.post(`${HOST}/api/getIncomes`, {
@@ -122,23 +130,32 @@ const IncomesDetails = ({ route, navigation }) => {
         console.log("handleDateSelect year",selectedYearNumber_v," monthNumber ",selectedMonthNumber_v )
     };
 
-    const fetchIncomesData =async () => {
-        var currentDate = new Date();
-        var currentMonthValue=currentDate.getMonth()+1+""
-       
-        var curentYearValue=currentDate.getFullYear()
-        selectedYearNumber_v=currentMonthValue
-        selectedMonthNumber_v=curentYearValue
-        console.log("---fetchIncomesData", curentYearValue, " ", currentMonthValue, " ---");
+    const fetchIncomesData = async () => {
+        try {
+            var currentDate = new Date();
+            var currentMonthValue = currentDate.getMonth() + 1;
+            var currentYearValue = currentDate.getFullYear();
     
-        const response_get_incomes = await axios.post(`${HOST}/api/getIcomes`, {
-          user_id: '645006320188d6681b4db8f4',
-          yearNumber: currentDate.getFullYear(),
-          monthNumber: currentDate.getMonth()+1+""
-        });
-        setIncomesData(response_get_incomes.data.incomes|| []);
-        return response_get_incomes.data.incomes;
-      }  
+            selectedYearNumber_v = currentYearValue;
+            selectedMonthNumber_v = currentMonthValue;
+    
+            console.log("---fetchIncomesData", "selectedYearNumber_v " + selectedYearNumber_v, " selectedMonthNumber_v", selectedMonthNumber_v, " ---");
+    
+            const response_get_incomes = await axios.post(`${HOST}/api/getIncomes`, { // Corrected endpoint URL
+                user_id: '645006320188d6681b4db8f4',
+                yearNumber: selectedYearNumber_v,
+                monthNumber: selectedMonthNumber_v 
+            });
+            // Update incomes data state with the fetched data
+            setIncomesData(response_get_incomes.data.incomes || []);
+            
+            // Handle the response as needed
+        } catch (error) {
+            // Handle errors appropriately
+            console.error("Error fetching incomes data:", error);
+        }
+    }
+    
 
     const isFocused = useIsFocused();
 
@@ -210,6 +227,8 @@ const IncomesDetails = ({ route, navigation }) => {
                 </TouchableOpacity>
                 <TouchableOpacity  
                 onPress={() => {
+                    console.log("yearNumberx :"+selectedYearNumber_v)
+                    console.log("monthNumberx :"+selectedMonthNumber_v)
                     navigation.navigate("IncomesInsert", {  
                             yearNumber: selectedYearNumber_v,
                             monthNumber:selectedMonthNumber_v
