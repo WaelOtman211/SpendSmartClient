@@ -6,7 +6,7 @@ import Investment from '../components/Investment';
 import axios from 'axios';
 import { HOST } from '../network';
 import { MaterialIcons } from '@expo/vector-icons';
-
+import Goal_data_table from './Goal_data_table';
 const Modal_Last_month_process = Props => {
 
   const [modalVisible, setModalVisible] = useState(Props.Visible);
@@ -14,7 +14,7 @@ const Modal_Last_month_process = Props => {
   const [maxStagesNumber, setMaxStagesNumber] = useState(3);
 
   const [title, settitle] = useState("");
-
+  const [GoalDetails, setGoalDetails] = useState([])
   const [nextBlocker, setNextBlocker] = useState(false);
   const [backBlocker, setBackBlocker] = useState(false);
 
@@ -29,10 +29,13 @@ const Modal_Last_month_process = Props => {
 
   const [investmentAmount, setInvestmentAmount] = useState('');
 
+  const [savingsAmount, setSavingsAmount] = useState("");
+
+
   const showAlert = () => {
     Alert.alert(
       'Missing fields',
-      'Insert the precentage of the investment ',
+      'Insert the amount of the investment ',
       [
         {
           text: 'OK',
@@ -41,6 +44,17 @@ const Modal_Last_month_process = Props => {
       ],
       { cancelable: false }
     );
+  };
+
+  const getSavings = async () => {
+    try {
+      const resp = await axios.get(`${HOST}/api/getSavings`);
+      const savings = resp.data.savings;
+      setSavingsAmount(savings);
+    } catch (error) {
+      console.error("Error fetching savings data:", error);
+      throw error;
+    }
   };
 
 
@@ -66,7 +80,7 @@ const Modal_Last_month_process = Props => {
         settitle("Your Incomes from the previous month");
         break;
       case 2:
-        settitle("Investment Precetnage");
+        settitle("Investment Amount");
         break;
       case 3:
         settitle("");
@@ -89,12 +103,14 @@ const Modal_Last_month_process = Props => {
   const nextStage = async () => {
 
     if (stageNumber == 2) {
+      fun()
 
       if (investmentAmount == '') {
         showAlert()
         return
       }
     }
+    
     var stageNumber_temp = stageNumber + 1
     setStageNumber(stageNumber_temp)
     console.log("press backStage")
@@ -148,11 +164,28 @@ const Modal_Last_month_process = Props => {
   }
   // Function to update the remaining amount
   function updateRemaining(goals, oneRateAmount) {
+    var extraMoney = 0;
+
     goals.forEach(goal => {
       const rateAmount = oneRateAmount * parseInt(goal.rate);
-      goal.remaining -= rateAmount;
+      if (rateAmount <= goal.remaining) {
+        goal.remaining -= rateAmount;
+        if (goal.remaining == 0) {
+          goal.achieved = true;
+        }
+        goal.collected = goal.amount - goal.remaining;
+      }
+      else {
+        goal.achieved = true;
+        goal.remaining = 0;
+        goal.collected = goal.amount;
+        extraMoney += rateAmount - goal.remaining;
+      }
+
     });
     console.log(goals)
+    console.log("extraMoney- " + extraMoney)
+
   }
 
   const budgetAlgorithm = async (freeMoney) => {
@@ -167,18 +200,55 @@ const Modal_Last_month_process = Props => {
 
     console.log("oneRateAmount-" + oneRateAmount)
     updateRemaining(userGoals, oneRateAmount);
-    await updateGoalsDB(userGoals)
+    console.log("final saving Amount-" + savingsAmount)
+
+
+    // await updateGoalsDB(userGoals)
 
 
   }
   ////////////////////////////////////////////////////////  
+
+  const updateSavingAmount = async (savingsAmount) => {
+    try {
+      console.log("start update Saving on DB - Amount: " + savingsAmount)
+      try {
+        const response = await axios.put(`${HOST}/api/updateSavings`, {
+          savings: savingsAmount
+        });
+        console.log(response)
+        return true;
+      } catch (error) {
+        // Handle error
+        Alert.alert('Error', 'Failed to update investment amount. Please try again.');
+        console.error('Update failed:', error);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating investment amount:", error);
+      return false;
+    }
+  };
+
   const finishStage = async () => {
     //setModalVisible(!modalVisible)
     console.log("finishStage")
+    getSavings()
+    console.log("Saving Amount- " + savingsAmount)
+    console.log("parseInt(totalIncome) ",parseInt(totalIncome))
     setFreeMoney(parseInt(totalIncome) - parseInt(totalExpenses) - parseInt(investmentAmount))
     console.log("freeMoney-" + freeMoney)
     if (freeMoney > 0) {
       budgetAlgorithm(freeMoney)
+    }
+
+    //updateSavingAmount
+
+    res = await updateSavingAmount(savingsAmount)
+    console.log(res)
+    if (res === false) {
+      Alert.alert('Error', 'Failed to update Savings money. Please try again.');
+      return
     }
 
     res = await updateInvestmentAmountDB()
@@ -188,7 +258,37 @@ const Modal_Last_month_process = Props => {
       return
     }
 
+    Props.SetVisible(false)
+
   }
+  const fun= async () => {
+       
+      console.log("i am here in fun ")
+        
+      userGoals = await getUserGoals()
+
+      console.log(userGoals)
+      sumOfRates = sumRates(userGoals)
+
+      const freeMoneyv=parseInt(totalIncome) - parseInt(totalExpenses) - parseInt(investmentAmount)
+
+      oneRateAmount = parseInt(freeMoneyv / sumOfRates)
+
+      console.log("sumOfRates ",sumOfRates)
+      console.log("oneRateAmount ", oneRateAmount)
+      console.log("freeMoneyv ",freeMoneyv)
+
+      const updatedGoalsArray = [];
+
+
+      userGoals.forEach(goal => {
+        const rateAmount = oneRateAmount * parseInt(goal.rate);
+        updatedGoalsArray.push({ goal: goal.name, rateAmount });
+      });
+
+      setGoalDetails(updatedGoalsArray)
+   
+    }
 
 
   const updateInvestmentAmountDB = async () => {
@@ -224,7 +324,6 @@ const Modal_Last_month_process = Props => {
 
   return (
     <View style={styles.centeredView}>
-
       <Modal
         animationType="slide"
         transparent={true}
@@ -241,68 +340,68 @@ const Modal_Last_month_process = Props => {
               </Pressable>
             </View>
             <Text style={styles.modalText}>{title}</Text>
-
             {
-              stageNumber === 0 &&
-              <Items_table
-
-                data={Props.expensesData}
-                yearNumber={PrevYear}
-                monthNumber={PrevMonth}
-                setTotalExpenses={setTotalExpenses}
-              />
+              stageNumber === 0 && (
+                <Items_table
+                  data={Props.expensesData}
+                  yearNumber={PrevYear}
+                  monthNumber={PrevMonth}
+                  setTotalExpenses={setTotalExpenses}
+                />
+              )
             }
             {
-              stageNumber === 1 &&
-              <Items_table_income
-                data={Props.incomesData}
-                yearNumber={PrevYear}
-                monthNumber={PrevMonth}
-                setTotalIncome={setTotalIncome}
-              />
+              stageNumber === 1 && (
+                <Items_table_income
+                  data={Props.incomesData}
+                  yearNumber={PrevYear}
+                  monthNumber={PrevMonth}
+                  setTotalIncome={setTotalIncome}
+                />
+              )
             }
             {
-              stageNumber === 2 &&
-              <View style={{ height: "56%" }}>
-                <View style={{ marginBottom: 20 }}>
-                  <Text style={styles.stageDescription}>
-                    Please enter the percentage of your income you'd like to invest:
-                  </Text>
-                </View>
-                <View style={styles.investmentInputContainer}>
-                  <Text style={styles.investmentInputLabel}>Investment Percentage:</Text>
-                  <TextInput
-                    style={styles.investmentInput}
-                    keyboardType="numeric"
-                    placeholder="Enter percentage"
-                    value={investmentAmount}
-                    onChangeText={setInvestmentAmount}
-                  />
-                </View>
-                <Text style={styles.investmentExample}>
-                  For example, you can enter 10 for 10% of your income.
-                </Text>
-              </View>
-            }
-            {
-              stageNumber === 3 && (
-                <View style={{ height: "56%", alignItems: 'flex-start', justifyContent: 'flex-start', paddingHorizontal: 20 }}>
-                  <Text style={styles.stageTitle}>Congratulations!</Text>
-                  <Text style={styles.infoText}>
-                    Your financial details have been successfully updated. Please check your goals, tracking details, and investment suggestions within the application.
-                  </Text>
-                  <Text>investmentAmount: {investmentAmount}</Text>
+              stageNumber === 2 && (
+                <View style={{ height: "56%" }}>
+                  <View style={{ marginBottom: 20 }}>
+                    <Text style={styles.stageDescription}>
+                      Please enter the amount of your income you'd like to invest:
+                    </Text>
+                  </View>
+                  <View style={styles.investmentInputContainer}>
+                    <Text style={styles.investmentInputLabel}>Investment Amount:</Text>
+                    <TextInput
+                      style={styles.investmentInput}
+                      keyboardType="numeric"
+                      placeholder="Instert amount"
+                      value={investmentAmount}
+                      onChangeText={setInvestmentAmount}
+                    />
+                  </View>
+                  
                 </View>
               )
             }
+            {
+              stageNumber === 3 && (
 
+                < View style={{ height: "56%" }}>
+                  
+                  
+
+                  <Goal_data_table GoalDetails={GoalDetails} />
+
+                </View>
+              )
+            }
             <View style={{ flexDirection: 'row', justifyContent: "space-between", marginTop: 20 }}>
               {
-                stageNumber !== 0 &&
-                <Pressable
+                stageNumber !== 0 && (
+                  <Pressable
                   style={({ pressed }) => [
                     styles.button,
                     styles.buttonBack,
+                    ((backBlocker === false && stageNumber === 3)||backBlocker === false && stageNumber === 2) ? { bottom: -100 } : {},
                     backBlocker === false ? styles.activeButton : {},
                   ]}
                   onPress={() => backStage()}
@@ -310,14 +409,15 @@ const Modal_Last_month_process = Props => {
                 >
                   <MaterialIcons name="arrow-back" size={24} color="black" />
                 </Pressable>
+                )
               }
-
               {
-                maxStagesNumber > stageNumber &&
-                <Pressable
+                maxStagesNumber > stageNumber && (
+                  <Pressable
                   style={({ pressed }) => [
                     styles.button,
                     styles.buttonNext,
+                    (nextBlocker === false && stageNumber ===2) ? { bottom: -100 } : {},
                     nextBlocker === false ? styles.activeButton : {},
                   ]}
                   onPress={() => nextStage()}
@@ -325,40 +425,32 @@ const Modal_Last_month_process = Props => {
                 >
                   <MaterialIcons name="arrow-forward" size={24} color="black" />
                 </Pressable>
+                )
               }
               {
-                maxStagesNumber == stageNumber &&
-                <View style={styles.finishButtonContainer}>
+                stageNumber === maxStagesNumber && (
+                  <View style={styles.finishButtonContainer}>
                   <Pressable
-
                     style={({ pressed }) => [
-                      styles.button,
                       styles.finishButton,
+                      nextBlocker === false ? styles.activeButton : {},
+                   
                     ]}
                     onPress={() => finishStage()}
                     disabled={nextBlocker}
                   >
-                    <Text style={styles.finishButtonText}>Finish</Text>
+                    <Text style={styles.textStyle}>Finish</Text>
                   </Pressable>
-                </View>
+                  </View>
+                )
               }
-
             </View>
-
-
           </View>
         </View>
-      </Modal>
-      <Pressable
-        style={[styles.button, styles.buttonOpen]}
-        onPress={() => setModalVisible(true)}>
-        <Text style={styles.textStyle}>Show Modal</Text>
-      </Pressable>
-
-    </View>
+      </Modal >
+    </View >
   );
 };
-
 
 const styles = StyleSheet.create({
   containerr: {
@@ -393,15 +485,23 @@ const styles = StyleSheet.create({
     padding: 10, // Add padding for spacing
     justifyContent: 'center', // Align icon to the center of the button
     alignItems: 'center', // Align icon to the center of the button
+    
   },
   buttonOpen: {
     backgroundColor: '#6C63FF', // Change background color to a shade of blue
   },
   buttonNext: {
     width: 50, // Set fixed width for circular button
+    position:'absolute',
+    bottom: -25,
+    right:0
   },
   buttonBack: {
     width: 50, // Set fixed width for circular button
+    position:'absolute',
+    bottom: -25,
+    left:0
+   
   },
   activeButton: {
     opacity: 1, // Make active buttons fully visible
@@ -447,25 +547,28 @@ const styles = StyleSheet.create({
 
   finishButtonContainer: {
     width: '100%',
-    alignItems: 'center',
+    position:'relative',
+   
   },
   finishButton: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 50,
-    paddingVertical: 12,
+paddingBottom:10,
     paddingHorizontal: 30,
+    position:'absolute',
+    bottom: -100,
+    right:0
   },
   finishButtonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+   
   },
   infoText: {
     fontSize: 15,
     textAlign: 'auto',
     marginBottom: 30,
     paddingHorizontal: 20,
-    backgroundColor:'#A0E6C3',
+    backgroundColor: '#A0E6C3',
   },
   stageTitle: {
     fontSize: 24,

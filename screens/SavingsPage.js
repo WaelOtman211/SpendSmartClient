@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, SafeAreaView, KeyboardAvoidingView,Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, SafeAreaView, KeyboardAvoidingView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import FooterList from "../components/footer/FooterList";
 import axios from 'axios';
@@ -21,19 +21,19 @@ const SavingsPage = () => {
     console.log("updateGoalsDB ->")
     console.log(newGoals)
     try {
-        const response = await axios.put(`${HOST}/api/updateGoals`, {
-            newGoals: newGoals
-        });
-        // Handle response or perform any additional actions upon success
-        console.log('Goals updated successfully:'  );
+      const response = await axios.put(`${HOST}/api/updateGoals`, {
+        newGoals: newGoals
+      });
+      // Handle response or perform any additional actions upon success
+      console.log('Goals updated successfully:');
     } catch (error) {
-        // Handle error
-        console.error('Error updating goals:', error);
-        // You can choose to throw the error again to propagate it or handle it as needed
-        throw error;
+      // Handle error
+      console.error('Error updating goals:', error);
+      // You can choose to throw the error again to propagate it or handle it as needed
+      throw error;
     }
-}
- 
+  }
+
   const getSavings = async () => {
     try {
       const resp = await axios.get(`${HOST}/api/getSavings`);
@@ -45,9 +45,9 @@ const SavingsPage = () => {
     }
   };
 
-  const updateSavingAmount = async (savingsAmount ) => {
+  const updateSavingAmount = async (savingsAmount) => {
     try {
-      console.log("start update Saving on DB - Amount: "+savingsAmount )
+      console.log("start update Saving on DB - Amount: " + savingsAmount)
       try {
         const response = await axios.put(`${HOST}/api/updateSavings`, {
           savings: savingsAmount
@@ -75,8 +75,10 @@ const SavingsPage = () => {
       const convertedGoals = dbGoals.map((dbGoal, index) => {
         return {
           id: (index + 1).toString(),
-          title: dbGoal.name,
-          amount: parseInt(dbGoal.amount),
+          goalid:dbGoal._id,
+          name: dbGoal.name,
+          collected: parseInt(dbGoal.collected),
+          remaining: parseInt(dbGoal.remaining),
           transferAmount: '',
         };
       });
@@ -91,59 +93,58 @@ const SavingsPage = () => {
   const transferFunds = () => {
     // Find the selected goal
     const selectedGoalItem = goals.find(goal => goal.id === selectedGoal);
-    
+
     // Validate transfer amount
     if (!selectedGoalItem.transferAmount || isNaN(selectedGoalItem.transferAmount)) {
       setErrorMessage('Please enter a valid transfer amount.');
       return;
     }
-    
+
     // Convert transfer amount to number
     const transferAmountNumber = parseFloat(selectedGoalItem.transferAmount);
-    
+
     // Validate if transfer amount is greater than available savings
     if (transferAmountNumber > savingsAmount) {
       setErrorMessage('Insufficient savings amount for transfer.');
       return;
     }
-  
+
     // Calculate new savings amount
     const newSavingsAmount = savingsAmount - transferAmountNumber;
-  
+
     // Update the savings amount and goal amount
     setSavingsAmount(newSavingsAmount);
-  
+
     // Update goals in the database and saving amount
     setGoals(prevGoals => {
       const updatedGoals = prevGoals.map(goal => {
         if (goal.id === selectedGoal) {
-          return { ...goal, amount: goal.amount + transferAmountNumber, transferAmount: '' };
+          return { ...goal, collected: goal.collected + transferAmountNumber,remaining:goal.remaining - transferAmountNumber,transferAmount: '' };
         }
         return goal;
       });
   
-      // Update goals in the database
       updateGoalsDB(updatedGoals);
-  
+
       // Update saving amount
       updateSavingAmount(newSavingsAmount);
-  
+
       // Reset error message
       setErrorMessage('');
-  
+
       return updatedGoals;
     });
   };
-  
-  
+
+
 
   const renderGoalItem = ({ item }) => (
     <TouchableOpacity
       style={[styles.goalItem, selectedGoal === item.id && styles.selectedGoalItem]}
       onPress={() => setSelectedGoal(item.id)}
     >
-      <Text style={styles.goalTitle}>{item.title}</Text>
-      <Text style={styles.goalAmount}>Goal Amount: ${item.amount}</Text>
+      <Text style={styles.goalTitle}>{item.name}</Text>
+      <Text style={styles.goalAmount}>Goal Amount: ${item.collected}</Text>
       <TextInput
         style={styles.transferInput}
         placeholder="Enter Transfer Amount"
@@ -184,7 +185,7 @@ const SavingsPage = () => {
 
           <Text style={styles.goalsTitle}>Goals List:</Text>
 
-          <View style={styles.goalList}>
+          <View style={styles.goalListContainer}>
             <FlatList
               data={goals}
               renderItem={renderGoalItem}
@@ -196,15 +197,16 @@ const SavingsPage = () => {
             <Text style={styles.errorMessage}>{errorMessage}</Text>
           ) : null}
 
-           
-          <View style={styles.buttonContainerStyle}>
-            <TouchableOpacity onPress={transferFunds} style={styles.buttonStyle}>
-              <Text style={styles.TransferTextButton}>Transfer</Text>
-            </TouchableOpacity>
-          </View>
+        </View>
+        <View style={styles.buttonContainerStyle}>
+          <TouchableOpacity onPress={transferFunds} style={styles.buttonStyle}>
+            <Text style={styles.TransferTextButton}>Transfer</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
       <FooterList />
+
+
     </SafeAreaView>
   );
 };
@@ -224,6 +226,10 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
+  goalListContainer: {
+    flex: 1,
+  },
+
   header: {
     fontSize: 24,
     fontWeight: 'bold',

@@ -173,6 +173,7 @@ const OptionPage = ({ navigation }) => {
           {true===isLastMonthProcessActive &&(
           <Modal_Last_month_process
             Visible={isLastMonthProcessActive}
+            SetVisible={setIsLastMonthProcessActive}
             expensesData={expensesData}
             incomesData={incomesData}
             func_getExpenses={getExpenses}

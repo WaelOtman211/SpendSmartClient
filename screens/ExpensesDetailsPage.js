@@ -87,6 +87,8 @@ const ExpensesDetails = ({ route, navigation }) => {
         console.log("hgh",currentDate.getMonth())
         // Fetch available dates from the server
 
+        
+
         const fetchExpensesData =async () => {
             var currentDate = new Date();
  

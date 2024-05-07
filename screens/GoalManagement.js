@@ -52,7 +52,7 @@ const GoalManagementPage = () => {
     console.log("updateGoalsDB ->")
     console.log(newGoals)
     try {
-        const response = await axios.put(`${HOST}/api/updateGoals`, {
+        const response = await axios.put(`${HOST}/api/updateGoalsMangement`, {
             newGoals: newGoals
         });
         // Handle response or perform any additional actions upon success
@@ -69,11 +69,15 @@ const GoalManagementPage = () => {
     // Find fromGoal and toGoal
     const fromGoal = goals.find(goal => goal._id === fromGoalId);
     const toGoal = goals.find(goal => goal._id === toGoalId);
+    
 
     fromGoal.collected = fromGoal.amount - fromGoal.remaining;
     toGoal.collected = toGoal.amount - toGoal.remaining;
 
     console.log("transferAmount -->", transferAmount);
+    console.log("fromGoal.collected"+fromGoal.collected)
+    console.log("togoal.collected"+toGoal.collected)
+
      
     // Check if the amount to transfer exceeds the collected amount in the fromGoal
     if (parseFloat(fromGoal.collected) < parseFloat(transferAmount)){
@@ -87,8 +91,11 @@ const GoalManagementPage = () => {
 
     toGoal.collected = parseFloat(toGoal.collected) + parseFloat(transferAmount);
     toGoal.remaining = parseFloat(toGoal.remaining) - parseFloat(transferAmount);
-    
-    await updateGoalsDB(goals)
+
+   
+
+    await updateGoalsDB(fromGoal)
+    await updateGoalsDB(toGoal)
   }
 
   const transferFunds = (fromGoalId, toGoalId) => {
@@ -147,7 +154,10 @@ const GoalManagementPage = () => {
     }
 
     const goal = goals.find(goal => goal._id === selectedGoal);
-
+    console.log('Start Date:', goal.startDate);
+    console.log('End Date:', goal.endDate);
+    console.log('Collected:', goal.collected);
+    console.log('Remaining', goal.Remaining);
     return (
       <View style={styles.goalDetails}>
         <Text style={styles.detailsTitle}>{goal.name}</Text>
@@ -155,8 +165,7 @@ const GoalManagementPage = () => {
         <Text style={styles.detailsText}>Amount: ${goal.amount}</Text>
         <Text style={styles.detailsText}>Collected : ${goal.amount - goal.remaining}</Text>
         <Text style={styles.detailsText}>Remaining : ${goal.remaining}</Text>
-        <Text style={styles.detailsText}>Start Date: {new Date(goal.startDate).toISOString().split("T")[0]}</Text>
-        <Text style={styles.detailsText}>End Date: {new Date(goal.endDate).toISOString().split("T")[0]}</Text>
+       
 
         <Text style={styles.transferText}>Transfer Funds:</Text>
         <TextInput

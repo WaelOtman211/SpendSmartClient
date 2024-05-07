@@ -112,6 +112,10 @@ const IncomesDetails = ({ route, navigation }) => {
                 yearNumber: year,
                 monthNumber: month
             });
+            console.log("getIncomes---getIncomes: ")
+            console.log(response)
+            console.log("getIncomes---getIncomes: ")
+
 
             // Update incomes data state with the fetched data
             setIncomesData(response.data.incomes || []);

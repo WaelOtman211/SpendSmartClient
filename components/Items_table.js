@@ -21,17 +21,18 @@ const Items_table=Props=>{
     
 
     useEffect(() => { setExpensesData(Props.data) }, [Props.data])
+    var totalTracked = 0
+    var totalBudget = 0
     
     try 
     {
-        var totalTracked = expensesData.reduce((acc, item) => acc + parseFloat(item.tracked), 0);
-        var totalBudget = expensesData.reduce((acc, item) => acc + parseFloat(item.budget), 0);
-        Props.setTotalExpenses(totalBudget)
+        totalTracked = expensesData.reduce((acc, item) => acc + parseFloat(item.tracked), 0);
+        totalBudget = expensesData.reduce((acc, item) => acc + parseFloat(item.budget), 0);
+        Props.setTotalExpenses(totalTracked)
     }
     catch (error) 
     {
-        var totalTracked = 0
-        var totalBudget = 0
+       
     }
     
 
@@ -105,8 +106,8 @@ const Items_table=Props=>{
 
     const handleEditBudget = (index) => {
         setEditingIndex(index);
-        console.log(expensesData[index].budget)
-        setUpdatedBudget(expensesData[index].budget);
+        console.log(expensesData[index].tracked)
+        setUpdatedBudget(expensesData[index].tracked);
     };
 
 
@@ -131,11 +132,11 @@ const Items_table=Props=>{
                             <Ionicons name="pencil" size={24} color="blue" />
                         </TouchableOpacity>
                         <Text style={styles.cell}>
-                            {item.budget}
+                            {item.tracked}
                         </Text>
                     </>
                 )}
-                <Text style={styles.cell}>{item.tracked}</Text>
+                <Text style={styles.cell}>{item.budget}</Text>
                 <Text style={styles.cell}>{item.name}</Text>
                 <TouchableOpacity onPress={() => handleDeleteExpense(item._id)}>
                     <Feather name="trash-2" size={20} color="blue" />
@@ -148,8 +149,8 @@ const Items_table=Props=>{
         
         <View>
          <View style={[styles.row, styles.headerRow]}>
-                    <Text style={styles.headerCell}>Budget</Text>
                     <Text style={styles.headerCell}>Tracked</Text>
+                    <Text style={styles.headerCell}>Budget</Text>
                     <Text style={styles.headerCell}>Expenses</Text>
                 </View>
                 <View>
@@ -165,10 +166,10 @@ const Items_table=Props=>{
                         <View style={styles.line} />
                         <View style={styles.totalRow}>
                             <Text style={[styles.cell, styles.totalCell]}>
-                                {totalBudget.toFixed(2)}
+                                {totalTracked.toFixed(2)}
                             </Text>
                             <Text style={[styles.cell, styles.totalCell]}>
-                                {totalTracked.toFixed(2)}
+                                {totalBudget.toFixed(2)}
                             </Text>
                             <Text style={[styles.cell, styles.totalCell]}>Total</Text>
                         </View>

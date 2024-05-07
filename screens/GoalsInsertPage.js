@@ -21,7 +21,7 @@ const GoalsInsert = ({ navigation }) => {
   const [collected, setCollected] = useState('0');
   const [remaining, setRemaining] = useState('0');
   const [achieved, setAchieved] = useState(false);
-  const [startDate, setStartDate] = useState('2023-01-01');
+  const [startDate, setStartDate] = useState('2024-05-07');
   const [endDate, setEndDate] = useState('2024-12-31');
   const [isAddGoalPressed, setIsAddGoalPressed] = useState(true);
   const [isAchievedGoalPressed, setIsAchievedGoalPressed] = useState(false);

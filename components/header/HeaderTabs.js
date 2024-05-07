@@ -101,12 +101,7 @@ const HeaderTabs = () => {
       <View style={styles.modalTitleContainer}>
         <Text style={styles.modalTitle}>Suggested Pages</Text>
       </View>
-      <TouchableOpacity onPress={() => handlePageSelection("Loan Details")} style={styles.pageItem}>
-        <FontAwesome5 name="file-invoice" style={styles.pageIcon} />
-        <View style={styles.pageTextContainer}>
-          <Text style={styles.pageText}>Loan Details</Text>
-        </View>
-      </TouchableOpacity>
+     
       
       <TouchableOpacity onPress={() => handlePageSelection("Expenses")} style={styles.pageItem}>
         <FontAwesome5 name="dollar-sign" style={styles.pageIcon} />
@@ -126,6 +121,12 @@ const HeaderTabs = () => {
         </View>
         <View style={styles.pageTextContainer}>
           <Text style={styles.pageText}>Goals Insert</Text>
+        </View>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => handlePageSelection("Loan Details")} style={styles.pageItem}>
+        <FontAwesome5 name="file-invoice" style={styles.pageIcon} />
+        <View style={styles.pageTextContainer}>
+          <Text style={styles.pageText}>Loan Details</Text>
         </View>
       </TouchableOpacity>
       <TouchableOpacity onPress={toggleModal} style={styles.cancelItem}>
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
     marginTop: '10%',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#A0E6C3',
     height: '70%', // Adjust the height as needed
     width: '80%',
     alignSelf: 'center',
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#3498db', // Title color
+    color: 'black', // Title color
   },
   pageItem: {
     flexDirection: 'row',
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 15,
-    backgroundColor: '#3498db', // Page item background color
+    backgroundColor: '#67C28D', // Page item background color
     width:'80%'
   },
   pageIcon: {
@@ -186,7 +187,8 @@ const styles = StyleSheet.create({
   },
   pageText: {
     fontSize: 18,
-    color: '#fff', // Text color
+    color: 'black',
+    fontWeight:"bold" // Text color
   },
   cancelItem: {
     marginTop: 'auto',
@@ -197,7 +199,9 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 18,
-    color: '#fff', // Cancel button text color
+    color: '#fff', 
+    fontWeight:"bold" // Text color
+    // Cancel button text color
   },
 });
   export default HeaderTabs;
