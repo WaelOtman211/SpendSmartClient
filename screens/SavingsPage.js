@@ -144,7 +144,7 @@ const SavingsPage = () => {
       onPress={() => setSelectedGoal(item.id)}
     >
       <Text style={styles.goalTitle}>{item.name}</Text>
-      <Text style={styles.goalAmount}>Goal Amount: ${item.collected}</Text>
+      <Text style={styles.goalAmount}>Goal Collected: ${item.collected}</Text>
       <TextInput
         style={styles.transferInput}
         placeholder="Enter Transfer Amount"

@@ -41,11 +41,10 @@ const InvestmentPage = () => {
     const simulatedApiCall = new Promise(resolve => {
       setTimeout(() => {
         const stocks = [
-          { symbol: 'AAPL', name: 'Apple Inc.', price: 150.24 },
-          { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 3200.56 },
-          { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 2750.99 },
-          { symbol: 'MSFT', name: 'Microsoft Corporation', price: 250.88 },
-          { symbol: 'TSLA', name: 'Tesla Inc.', price: 620.50 },
+          { symbol: 'TSLA', name: 'NVIDIA Corporation', price: 921.40 },
+          { symbol: 'MSFT', name: 'Microsoft Corporation', price: 413.54 },
+          { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 188.70 },
+          { symbol: 'AAPL', name: 'Apple Inc.', price: 181.71 },
         ];
         resolve(stocks);
       }, 1000);
